@@ -12,7 +12,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String matNr = '';
+  String message = '';
   bool enabled = false;
   MifareClassic mfc = MifareClassic();
 
@@ -26,11 +26,26 @@ class _MyAppState extends State<MyApp> {
   Future<void> initPlatformState() async {
     if (!mounted) return;
 
-    mfc.onChange.listen((data)=>print('dart: ${data.eventData}'));
+    mfc.onChange.listen((data) {
+      if (isNumeric(data.eventData)) {
+        setState(() {
+          message = data.eventData;
+        });
+      } else {
+        message = data.eventData;
+      }
+    });
     bool _enabled = await MifareClassic.nfcState;
     setState(() {
       enabled = _enabled;
     });
+  }
+
+  bool isNumeric(String s) {
+    if (s == null) {
+      return false;
+    }
+    return double.tryParse(s) != null;
   }
 
   changeNfcState() async {
@@ -49,7 +64,7 @@ class _MyAppState extends State<MyApp> {
         ),
         body: Center(
           child: RaisedButton(
-            child: Text(matNr),
+            child: Text(message),
             color: enabled ? Colors.red : Colors.blue,
             onPressed: () {
               changeNfcState();

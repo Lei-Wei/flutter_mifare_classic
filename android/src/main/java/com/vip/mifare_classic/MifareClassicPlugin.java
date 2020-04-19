@@ -31,7 +31,6 @@ public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.Ne
     private static NfcAdapter mAdapter;
     private static MethodChannel channel = null;
     private static Intent savedIntent;
-    private static String stuId;
     private static BasicMessageChannel<String> messageChannel;
 
     private static String[] keys = {"528C9DFFE28C", "3E3554AF0E12", "740E9A4F9AAF", "97184D136233"};
@@ -40,9 +39,8 @@ public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.Ne
     public static void registerWith(Registrar registrar) {
         MifareClassicPlugin plugin = new MifareClassicPlugin();
         final MethodChannel methodChannel = new MethodChannel(registrar.messenger(), "method_channel");
-        messageChannel = new BasicMessageChannel<String>(registrar.messenger(),"message_channel", StringCodec.INSTANCE);
+        messageChannel = new BasicMessageChannel<String>(registrar.messenger(), "message_channel", StringCodec.INSTANCE);
         methodChannel.setMethodCallHandler(plugin);
-        // messageChannel.setMessageHandler(new BasicMessageChannel.MessageHandler<String>());
 
         Context context = registrar.context();
         registrar.addNewIntentListener(plugin);
@@ -65,18 +63,15 @@ public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.Ne
         }
     }
 
-    void send(String str) {
-        messageChannel.send(str);
-    }
-
     @Override
     public boolean onNewIntent(Intent intent) {
+        // there is a "run twice" bug if don't have this judgement
         if (savedIntent == intent) return false;
         savedIntent = intent;
         try {
             readCard(intent);
         } catch (IOException | ExecutionException | InterruptedException e) {
-            e.printStackTrace();
+            messageChannel.send("Error on reading card!");
         }
         return true;
     }
@@ -92,24 +87,18 @@ public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.Ne
             MifareClassic mfc = MifareClassic.get(tagFromIntent);
 
             if (mfc == null) return;
-            try {
-                mfc.connect();
-                for (int i = 0; i < 4; i++) {
-                    try {
-                        boolean auth = mfc.authenticateSectorWithKeyA(sectors[i], hexStringToByteArray(keys[i]));
-                        if (auth) {
-                            stuId = extractId(bytesToHexString(mfc.readBlock(mfc.sectorToBlock(sectors[i]))));
-                            send(stuId);
-                            break;
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+            mfc.connect();
+            for (int i = 0; i < 4; i++) {
+                boolean auth = mfc.authenticateSectorWithKeyA(sectors[i], hexStringToByteArray(keys[i]));
+                if (auth) {
+                    String stuId = extractId(bytesToHexString(mfc.readBlock(mfc.sectorToBlock(sectors[i]))));
+                    if(checkStr(stuId)){
+                        messageChannel.send(stuId);
+                        break;
                     }
                 }
-                mfc.close();
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+            mfc.close();
         }
     }
 
@@ -145,4 +134,16 @@ public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.Ne
         }
         return new StringBuffer(result).reverse().toString();
     }
+
+        // check whether the result string contains the id number
+        private boolean checkStr(String res) {
+            if(res.length()!=7) return false;
+            int temp;
+            try {
+                temp = Integer.parseInt(res);
+                return true;
+            } catch (final Exception e) {
+                return false;
+            }
+        }
 }
