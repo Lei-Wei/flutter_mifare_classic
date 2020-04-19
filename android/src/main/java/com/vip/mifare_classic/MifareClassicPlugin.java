@@ -14,33 +14,39 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
+import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
+import io.flutter.plugin.common.StringCodec;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-
 
 /**
  * MifareClassicPlugin
  */
 public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.NewIntentListener {
-    static boolean nfcEnabled = false;
+    private static boolean nfcEnabled = false;
 
-    static NfcAdapter mAdapter;
-    static MethodChannel channel = null;
-    static Intent savedIntent;
+    private static NfcAdapter mAdapter;
+    private static MethodChannel channel = null;
+    private static Intent savedIntent;
+    private static String stuId;
+    private static BasicMessageChannel<String> messageChannel;
 
-    static String[] keys = {"528C9DFFE28C", "3E3554AF0E12", "740E9A4F9AAF", "97184D136233"};
-    static int[] sectors = {5, 6, 8, 9};
+    private static String[] keys = {"528C9DFFE28C", "3E3554AF0E12", "740E9A4F9AAF", "97184D136233"};
+    private static int[] sectors = {5, 6, 8, 9};
 
     public static void registerWith(Registrar registrar) {
-        final MethodChannel channel = new MethodChannel(registrar.messenger(), "mifare_classic");
         MifareClassicPlugin plugin = new MifareClassicPlugin();
-        channel.setMethodCallHandler(plugin);
+        final MethodChannel methodChannel = new MethodChannel(registrar.messenger(), "method_channel");
+        messageChannel = new BasicMessageChannel<String>(registrar.messenger(),"message_channel", StringCodec.INSTANCE);
+        methodChannel.setMethodCallHandler(plugin);
+        // messageChannel.setMessageHandler(new BasicMessageChannel.MessageHandler<String>());
 
         Context context = registrar.context();
         registrar.addNewIntentListener(plugin);
+
         mAdapter = NfcAdapter.getDefaultAdapter(context);
         if (mAdapter == null || !mAdapter.isEnabled()) {
             nfcEnabled = false;
@@ -59,9 +65,13 @@ public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.Ne
         }
     }
 
+    void send(String str) {
+        messageChannel.send(str);
+    }
+
     @Override
     public boolean onNewIntent(Intent intent) {
-        if(savedIntent == intent) return false;
+        if (savedIntent == intent) return false;
         savedIntent = intent;
         try {
             readCard(intent);
@@ -84,19 +94,18 @@ public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.Ne
             if (mfc == null) return;
             try {
                 mfc.connect();
-                for(int i=0;i<4;i++){
-                    try{
+                for (int i = 0; i < 4; i++) {
+                    try {
                         boolean auth = mfc.authenticateSectorWithKeyA(sectors[i], hexStringToByteArray(keys[i]));
-                    if (auth) {
-                        String res = extractId(bytesToHexString(mfc.readBlock(mfc.sectorToBlock(sectors[i]))));
-                        Log.d("stuId: ", new String(res));
-                        break;
-                    }
-                    } catch(Exception e){
+                        if (auth) {
+                            stuId = extractId(bytesToHexString(mfc.readBlock(mfc.sectorToBlock(sectors[i]))));
+                            send(stuId);
+                            break;
+                        }
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
-                
                 mfc.close();
             } catch (Exception e) {
                 e.printStackTrace();

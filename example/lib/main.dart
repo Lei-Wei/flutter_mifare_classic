@@ -14,6 +14,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String matNr = '';
   bool enabled = false;
+  MifareClassic mfc = MifareClassic();
 
   @override
   void initState() {
@@ -24,6 +25,8 @@ class _MyAppState extends State<MyApp> {
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     if (!mounted) return;
+
+    mfc.onChange.listen((data)=>print('dart: ${data.eventData}'));
     bool _enabled = await MifareClassic.nfcState;
     setState(() {
       enabled = _enabled;
