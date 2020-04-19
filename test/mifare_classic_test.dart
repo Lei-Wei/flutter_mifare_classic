@@ -17,7 +17,7 @@ void main() {
     channel.setMockMethodCallHandler(null);
   });
 
-  test('getPlatformVersion', () async {
-    expect(await MifareClassic.platformVersion, '42');
+  test('startNfc', () async {
+    expect(await MifareClassic.startNfc(), true);
   });
 }
