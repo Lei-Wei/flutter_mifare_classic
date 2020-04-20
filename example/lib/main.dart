@@ -17,6 +17,7 @@ class _MyAppState extends State<MyApp> {
   bool hardwareEnabled = false;
   bool hardwareAvailable = false;
   bool available = false;
+  MifareClassic mfc;
 
   @override
   void initState() {
@@ -28,8 +29,8 @@ class _MyAppState extends State<MyApp> {
   Future<void> initPlatformState() async {
     if (!mounted) return;
 
-    MifareClassic.init();
-    MifareClassic.onChange.listen((data) {
+    mfc = MifareClassic();
+    mfc.onChange.listen((data) {
       if (isNumeric(data.eventData)) {
         setState(() {
           message = data.eventData;
@@ -39,10 +40,10 @@ class _MyAppState extends State<MyApp> {
       }
     });
 
-    bool _enabled = await MifareClassic.nfcState;
+    bool _enabled = await mfc.nfcState;
 
-    bool _ava = await MifareClassic.available;
-    bool _en = await MifareClassic.enabled;
+    bool _ava = await mfc.available;
+    bool _en = await mfc.enabled;
 
     setState(() {
       enabled = _enabled;
@@ -58,7 +59,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   changeNfcState() async {
-    bool _enabled = await MifareClassic.changeNfcState();
+    bool _enabled = await mfc.changeNfcState();
     setState(() {
       enabled = _enabled;
     });
