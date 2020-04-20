@@ -26,7 +26,8 @@ import java.util.concurrent.ExecutionException;
  * MifareClassicPlugin
  */
 public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.NewIntentListener {
-    private static boolean nfcEnabled = false;
+    // don't actually disable NFC on device
+    private static boolean nfcAppEnabled = false;
 
     private static NfcAdapter mAdapter;
     private static MethodChannel channel = null;
@@ -46,18 +47,19 @@ public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.Ne
         registrar.addNewIntentListener(plugin);
 
         mAdapter = NfcAdapter.getDefaultAdapter(context);
-        if (mAdapter == null || !mAdapter.isEnabled()) {
-            nfcEnabled = false;
-        }
     }
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
         if (call.method.equals("getNfcState")) {
-            result.success(nfcEnabled);
+            result.success(nfcAppEnabled);
         } else if (call.method.equals("changeNfcState")) {
-            nfcEnabled = !nfcEnabled;
-            result.success(nfcEnabled);
+            nfcAppEnabled = !nfcAppEnabled;
+            result.success(nfcAppEnabled);
+        } else if(call.method.equals("available")){
+            result.success(mAdapter != null);
+        } else if(call.method.equals("enabled")){
+            result.success(mAdapter.isEnabled());
         } else {
             result.notImplemented();
         }
@@ -77,6 +79,7 @@ public class MifareClassicPlugin implements MethodCallHandler, PluginRegistry.Ne
     }
 
     private void readCard(Intent intent) throws IOException, ExecutionException, InterruptedException {
+        if(!nfcAppEnabled) return;
         String action = intent.getAction();
 
         if (mAdapter.ACTION_TAG_DISCOVERED.equals(action)

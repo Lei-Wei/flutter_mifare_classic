@@ -14,7 +14,9 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String message = '';
   bool enabled = false;
-  MifareClassic mfc = MifareClassic();
+  bool hardwareEnabled = false;
+  bool hardwareAvailable = false;
+  bool available = false;
 
   @override
   void initState() {
@@ -26,7 +28,8 @@ class _MyAppState extends State<MyApp> {
   Future<void> initPlatformState() async {
     if (!mounted) return;
 
-    mfc.onChange.listen((data) {
+    MifareClassic.init();
+    MifareClassic.onChange.listen((data) {
       if (isNumeric(data.eventData)) {
         setState(() {
           message = data.eventData;
@@ -35,9 +38,15 @@ class _MyAppState extends State<MyApp> {
         message = data.eventData;
       }
     });
+
     bool _enabled = await MifareClassic.nfcState;
+
+    bool _ava = await MifareClassic.available;
+    bool _en = await MifareClassic.enabled;
+
     setState(() {
       enabled = _enabled;
+      available = _ava && _en;
     });
   }
 
@@ -62,15 +71,17 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Test Mifare Classic'),
         ),
-        body: Center(
-          child: RaisedButton(
-            child: Text(message),
-            color: enabled ? Colors.red : Colors.blue,
-            onPressed: () {
-              changeNfcState();
-            },
-          ),
-        ),
+        body: available
+            ? Center(
+                child: RaisedButton(
+                  child: Text(message),
+                  color: enabled ? Colors.red : Colors.blue,
+                  onPressed: () {
+                    changeNfcState();
+                  },
+                ),
+              )
+            : Text('hardware is not ready. (enable NFC on your device first!)'),
       ),
     );
   }
