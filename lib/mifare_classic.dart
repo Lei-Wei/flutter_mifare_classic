@@ -22,7 +22,10 @@ class MifareClassic {
   }
 
   Future<bool> get enabled async {
-    return await _methodhannel.invokeMethod('enabled');
+    if (await available) {
+      return await _methodhannel.invokeMethod('enabled');
+    }
+    return false;
   }
 
   Future<bool> get nfcState async {

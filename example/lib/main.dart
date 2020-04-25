@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-
-import 'package:flutter/services.dart';
 import 'package:mifare_classic/mifare_classic.dart';
 
 void main() => runApp(MyApp());
@@ -14,8 +12,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String message = '';
   bool enabled = false;
-  bool hardwareEnabled = false;
-  bool hardwareAvailable = false;
   bool available = false;
   MifareClassic mfc;
 
@@ -41,13 +37,11 @@ class _MyAppState extends State<MyApp> {
     });
 
     bool _enabled = await mfc.nfcState;
-
-    bool _ava = await mfc.available;
     bool _en = await mfc.enabled;
 
     setState(() {
       enabled = _enabled;
-      available = _ava && _en;
+      available = _en;
     });
   }
 
