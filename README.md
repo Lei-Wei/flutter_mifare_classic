@@ -2,7 +2,7 @@
 
 A new flutter plugin project.
 
-I'm new to Flutter and Android Development so I have no intent to put this plugin to Dart Pub. This Plugin is mainly for reading specific Student Cards, so it's not that for common-use designed.
+I'm new to Flutter and Android Development so I don't intent to put this plugin to Dart Pub. This Plugin is mainly for reading specific Student Cards, so it's not that for common-use designed.
 
 I would be happy if the source code could help you to deal with the MF1 card.
 
