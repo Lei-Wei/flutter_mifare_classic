@@ -27,13 +27,9 @@ class _MyAppState extends State<MyApp> {
 
     mfc = MifareClassic();
     mfc.onChange.listen((data) {
-      if (isNumeric(data.eventData)) {
-        setState(() {
-          message = data.eventData;
-        });
-      } else {
+      setState(() {
         message = data.eventData;
-      }
+      });
     });
 
     bool _enabled = await mfc.nfcState;
@@ -68,12 +64,17 @@ class _MyAppState extends State<MyApp> {
         ),
         body: available
             ? Center(
-                child: RaisedButton(
-                  child: Text(message),
-                  color: enabled ? Colors.red : Colors.blue,
-                  onPressed: () {
-                    changeNfcState();
-                  },
+                child: Column(
+                  children: <Widget>[
+                    Text(message),
+                    RaisedButton(
+                      child: Text(enabled ? 'disable' : 'enable'),
+                      color: enabled ? Colors.red : Colors.blue,
+                      onPressed: () {
+                        changeNfcState();
+                      },
+                    ),
+                  ],
                 ),
               )
             : Text('hardware is not ready. (enable NFC on your device first!)'),
